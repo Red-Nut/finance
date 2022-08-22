@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block title %}
+Finance - Unallocated
+{% endblock %}
+
+{% block header %}
+<br>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg">
+            <h1>Unallocated</h1>
+        </div>
+        <div class="col-lg text-end">
+            <button class="btn btn-primary me-5" onclick="save()">Save</button>
+        </div>
+    </div>
+</div>
+    
+{% endblock %}
+
+{% block main %}
+<br>
+<br>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg">
+            
+            <table class="table">
+                <tr>
+                    <th>Date</th>
+                    <th>Description</th>                        
+                    <th>Type</th>
+                    <th>Value</th>
+                    <th>To Account</th>
+                    <th>Transfered From</th>
+                    <th>Reserved?</th>
+                </tr>
+                {% for transaction in transactions%}
+                <tr>
+                    <td>{{transaction.date}}</td>
+                    <td>{{transaction.name}}</td>
+                    <td>{{transaction.get_type_display}}</td>
+                    <td>{{transaction.value}}</td>
+                    <td>{{transaction.paid_to}}</td>
+                    <td>
+                        <select class="transactionSelect" id="{{transaction.id}}">
+                            <option value="0" selected>---</option>
+                            {% for fromTransaction in allTransactions%}
+                            {% if fromTransaction.date == transaction.date %}
+                            {% if fromTransaction.value == transaction.value %}
+                            {% if fromTransaction.paid_from != transaction.paid_to %}
+                            <option value="{{fromTransaction.id}}">{{fromTransaction}}</option>
+                            {% endif %}
+                            {% endif %}
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td><input type="checkbox" class="transactionReserve" id="res-{{transaction.id}}"></td>
+                </tr>
+                <p></p>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg">
+            
+        </div>
+    </div>
+    
+</div>
+
+<script>
+    function save(){
+        transfers = [];
+
+        $("select[class='transactionSelect']").each(function(){
+            id = $(this).attr('id'); // grab id of select object
+            value = $('#' + id + ' :selected').val(); // grab value of select object
+            res = $('#res-' + id).prop("checked"); // grave value of checkbox
+            console.log(res);
+
+            if(value != "0"){
+                transfer = {paid_to:id, paid_from:value, reserve:res};
+                transfers.push(transfer);
+            }
+        });
+
+
+
+        data = {transfers:transfers};
+
+        csrftoken = getCookie('csrftoken');
+
+        json = JSON.stringify(data);
+        console.log(data)
+
+        $.ajax({
+            type: "POST",
+            credentials: 'same-origin',
+            url: "{% url 'save_transfers' %}",
+            data: json,
+            headers: { 'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json',
+            "X-CSRFToken": csrftoken },
+            // on success
+            success: function (response) {
+                errors = response.errors
+                for (let i = 0; i < errors.length; i++) {
+                    alert(errors[i])
+                }
+                
+                location.reload();
+            },
+            // on error
+            error: function (response) {
+                // alert the error if any error occured
+                
+            }
+        });
+
+    }
+</script>
+{% endblock %}
+

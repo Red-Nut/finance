@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block title %}
+Finance - CAPEX
+{% endblock %}
+
+{% block header %}
+{% endblock %}
+
+{% block main %}
+<br>
+<br>
+<div class="container-fluid">
+    <div class="row">
+        <table class="table">
+            <tr>
+                <th>Name</th>
+                <th>Description</th>  
+                <th>Total Cost</th>                      
+                <th>Status</th>
+                <th>Requested Date</th>
+                <th>Requested By</th>
+                <th>Approved Date</th>
+                <th>Approved By</th>
+                <th>Item</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>Planned Date</th>
+                <th>Comment</th>
+            </tr>
+        {% for capex in capexs %}
+            <tr>
+                <td>{{capex.name}}</td>
+
+                <td>{{capex.description}}</td>
+
+                <td style="text-align:right;">${{capex.total|floatformat:2}}</td>
+
+                <td style="text-align:center;">{{capex.status.get_status_display}}</td>
+
+                {% if capex.status.requested_date is None %}
+                <td style="text-align:center;">-</td>
+                {% else %}
+                <td style="text-align:center;">{{capex.status.requested_date}}</td>
+                {% endif %}
+
+                <td style="text-align:center;">{{capex.status.requested_by}}</td>
+
+                {% if capex.status.approved_date is None %}
+                <td style="text-align:center;">-</td>
+                {% else %}
+                <td style="text-align:center;">{{capex.status.approved_date}}</td>
+                {% endif %}
+
+                <td style="text-align:center;">{{capex.status.approved_by}}</td>
+
+               
+                {% for item in capex.items.all %}
+                
+                {% if forloop.counter != 1 %}
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                {% endif %}
+
+
+                    <td>{{item.name}}</td>
+
+                    <td style="text-align:center;">{{item.qty}}</td>     
+
+                    <td style="text-align:right;">${{item.price}}</td>
+
+                    {% if item.dateEstimate is None %}
+                    <td style="text-align:center;">-</td>
+                    {% else %}
+                    <td style="text-align:center;">{{item.dateEstimate}}</td>  
+                    {% endif %}
+
+                    {% if item.comment is None %}
+                    <td>-</td>
+                    {% else %}
+                    <td>{{item.comment}}</td>
+                    {% endif %}
+                {% if forloop.counter != 1 %}
+                </tr>
+                {% endif %}
+                {% endfor %}
+                
+            </tr>
+        {% endfor %}
+        </table>
+    </div>
+</div>
+
+
+{% endblock %}
+

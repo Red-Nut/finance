@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% block title %}
+Finance - Unallocated
+{% endblock %}
+
+{% block header %}
+<br>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg">
+            <h1>Unallocated</h1>
+        </div>
+        <div class="col-lg text-end">
+            <button class="btn btn-primary me-5" onclick="save()">Save</button>
+        </div>
+    </div>
+</div>
+    
+{% endblock %}
+
+{% block main %}
+<br>
+<br>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg">
+            
+            <table class="table">
+                <tr>
+                    <th>Date</th>
+                    <th>Description</th>                        
+                    <th>Type</th>
+                    <th>Merchant</th>
+                    <th>Value</th>
+                    <th>To/From Account</th>
+                    <th>Allocation</th>
+                    <th>Comments</th>
+                </tr>
+                {% for transaction in transactions%}
+                <tr>
+                    <td>{{transaction.date}}</td>
+                    <td>{{transaction.name}}</td>
+                    <td>{{transaction.get_type_display}}</td>
+                    {% if transaction.merchant is None %}
+                    <td>-</td>
+                    {% else %}
+                    <td>{{transaction.merchant}}</td>
+                    {% endif %}
+                    <td>{{transaction.value}}</td>
+                    {% if transaction.get_type_display == 'Credit' %}
+                    <td>{{transaction.paid_to}}</td>
+                    {% endif %}
+                    {% if transaction.get_type_display == 'Debit' %}
+                    <td>{{transaction.paid_from}}</td>
+                    {% endif %}
+                    {% if transaction.get_type_display == 'Transfer' %}
+                    <td>{{transaction.paid_from}}<br>to<br>{{transaction.paid_to}}</td>
+                    {% endif %}
+                    <td>
+                        <select class="allocationSelect" id="{{transaction.id}}">
+                            <option value="0" selected>---</option>
+                            {% for category in categories %}
+                            <option value="0" style="text-transform: uppercase; font-weight: bold;">{{category}}</option>
+                            {% for allocation in allocations%}
+                            {% if allocation.category == category %}
+                            <option value="{{allocation.id}}">{{allocation}}</option>
+                            {% endif %}
+                            {% endfor %}
+                            {% endfor %}
+                            <option value="0" style="text-transform: uppercase; font-weight: bold;">CAPEX</option>
+                            {% for capex in capexes%}
+                            <option value="CAPEX{{capex.capex.id}}">{{capex.capex}}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td>{{transaction.comment}}</td>
+                </tr>
+                <p></p>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg">
+            
+        </div>
+    </div>
+    
+</div>
+
+<script>
+    function save(){
+        transactionAllocations = [];
+        capitalAllocations = [];
+
+        $("select[class='allocationSelect']").each(function(){
+            id = $(this).attr('id'); // grab id of select object
+            value = $('#' + id + ' :selected').val(); // grab value of select object
+            if(value != "0"){
+                if(value.includes("CAPEX")){
+                    value = value.slice(5-value.length);
+                    capitalAllocation = {allocation:value, transaction:id};
+                    capitalAllocations.push(capitalAllocation);
+                } else {
+                    transactionAllocation = {allocation:value, transaction:id};
+                    transactionAllocations.push(transactionAllocation);
+                }
+            }
+        });
+
+        data = {transactionAllocations:transactionAllocations, capitalAllocations:capitalAllocations};
+
+        csrftoken = getCookie('csrftoken');
+
+        json = JSON.stringify(data);
+        console.log(data)
+
+        $.ajax({
+            type: "POST",
+            credentials: 'same-origin',
+            url: "{% url 'saveAllocations' %}",
+            data: json,
+            headers: { 'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json',
+            "X-CSRFToken": csrftoken },
+            // on success
+            success: function (response) {
+                errors = response.errors
+                for (let i = 0; i < errors.length; i++) {
+                    alert(errors[i])
+                }
+                
+                location.reload();
+            },
+            // on error
+            error: function (response) {
+                // alert the error if any error occured
+                
+            }
+        });
+
+    }
+</script>
+{% endblock %}
+

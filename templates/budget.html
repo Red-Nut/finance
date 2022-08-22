@@ -1,0 +1,393 @@
+{% extends 'base.html' %}
+{% load mathfilters %}
+{% block title %}
+Finance - Budget
+{% endblock %}
+
+{% block head %}
+<script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+{% endblock %}
+
+{% block header %}
+<br>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg">
+            <h2>Budget</h2>
+        </div>
+        <div class="col-lg text-end">
+            <button class="btn btn-primary me-5" onclick="save()">Save</button>
+        </div>
+    </div>
+</div>
+<hr>
+    
+{% endblock %}
+
+{% block main %}
+<br>
+<br>
+<br>
+<br>
+<div class="container-fluid">
+    <div class="row">
+        <table class="table" style="width:auto;">
+            <tr>
+                <th>Expected Income</th>
+                <td style="text-align: right;">{{income}}</td>
+            </tr>
+            <tr>
+                <th>Total Budget</th>
+                <td style="text-align: right;">{{totalSpend}}</td>
+            </tr>
+            <tr>
+                <th>Predicted Savings</th>
+                <td style="text-align: right;">{{savings}}</td>
+            </tr>
+        </table>
+    </div>
+    <br>
+    <br>
+    <br>
+    <br>
+
+    <div class="row">
+        <div class="col-lg">
+            <div id="chartCategory" style="height: 500px; width: 800px; margin:auto"></div>
+        </div>
+        <div class="col-lg">
+            <div id="chartAllocation" style="height: 500px; width: 900px; margin:auto"></div>
+        </div>
+    </div>
+    <br>
+    <br>
+    <br>
+    <br>
+    <div class="row">
+        <div class="col-lg">
+            <table class="table">
+                {% for budget in budgets %}
+                {% ifchanged budget.allocation.category.name %}
+                <tr>
+                    <th rowspan="2" colspan="2"><h2>{{budget.allocation.category.name}}</h2></th>
+                    <th colspan="5" style="text-align:center;">Budget</th>
+                    <th rowspan="2" style="text-align:center;">Held in Account</th>
+                    <th rowspan="2" style="text-align:center;">Remaining Funds</th>
+                    <td rowspan="{{budget.graphRows}}">
+                        <div id="chart{{budget.allocation.category.name}}" style="height: 300px; width: 400px;"></div>
+                    </td>
+                </tr>
+                <tr>
+                    <th style="text-align:right;">Basis</th>
+                    <th style="text-align:right;">Weekly</th>
+                    <!--<th style="text-align:right;">Fortnightly</th>-->
+                    <th style="text-align:right;">Monthly</th>
+                    <th style="text-align:right;">Quarterly</th>
+                    <th style="text-align:right;">Annually</th>
+                </tr>
+                {% endifchanged %}
+                
+                <tr>
+                    <td>{{budget.allocation.code}}</td>
+                    <td>{{budget.allocation.name}}</td>
+                    <td style="text-align:right;">{{budget.value}} {{budget.object.get_basis_display}}</td>
+                    {% for value in budget.values %}
+                        {% if forloop.counter != 2 %}
+                        <td style="text-align:right;">
+                            {% if budget.basis == forloop.counter %}
+                            <b>{{value}}</b>
+                            {% else %}
+                            {{value}}
+                            {% endif %}
+                        </td>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    <td style="text-align:center;">{{budget.account}}</td>
+                    {% if budget.rollover %}
+                    <td style="text-align:center;">Roll over to next budget period</td>
+                    {% else %}
+                    <td style="text-align:center;">Transfered to <u>{{budget.excess_to_allocation.name}}</u></td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+                <tr>
+                    <th rowspan="2" colspan="2"><h2>Weekly Reserve</h2></th>
+                    <th colspan="5" style="text-align:center;">Budget</th>
+                    <th rowspan="2" style="text-align:center;">Held in Account</th>
+                    <th rowspan="2" style="text-align:center;">Remaining Funds</th>
+                </tr>
+                <tr>
+                    <th style="text-align:right;">Basis</th>
+                    <th style="text-align:right;"></th>
+                    <!--<th style="text-align:right;">Fortnightly</th>-->
+                    <th style="text-align:right;">Monthly</th>
+                    <th style="text-align:right;"></th>
+                    <th style="text-align:right;"></th>
+                </tr>
+                <tr>
+                    <td>-</td>
+                    <td>Reserved to account for 5 week months</td>
+                    <td style="text-align:right;">{{weeklyReserve}} Montly</td>
+                    <td>-</td>
+                    <td style="text-align:right;"><b>{{weeklyReserve}}</b></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td>Roll over to next budget period</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg">
+            
+        </div>
+    </div>
+    
+</div>
+
+<script type="text/javascript">
+
+    window.onload = function () {
+
+        // Category Chart
+        var chart = new CanvasJS.Chart("chartCategory", {
+            title:{
+                text: "Category Budget Breakdown"              
+            },
+            data: [              
+                {
+                    // Change type to "doughnut", "line", "splineArea", etc.
+                    type: "pie",
+                    dataPoints: [
+                        {% for category in categories %}
+                        { name: "{{category.name}}", label: "{{category.name}}",  y: Math.round({{category.value}}*100)/100, toolTipContent: "{{category.name}}: $" + Math.round({{category.value}}*100)/100 },
+                        {% endfor %}
+                    ]
+                }
+            ]
+        });
+        chart.render();
+
+        // Allocation Chart
+        var chart = new CanvasJS.Chart("chartAllocation", {
+            title:{
+                text: "Full Breakdown"              
+            },
+            data: [              
+                {
+                    // Change type to "doughnut", "line", "splineArea", etc.
+                    type: "pie",
+                    dataPoints: [
+                        {% for budget in budgets %}
+                        { name: "{{budget.allocation.name}}", label: "{{budget.allocation.name}}", y: {{budget.valueMonth}}, toolTipContent: "{{budget.allocation.name}}: ${{budget.valueMonth}}" },
+                        {% endfor %}
+                    ]
+                }
+            ]
+        });
+        chart.render();
+
+        // Home Chart
+        var chart = new CanvasJS.Chart("chartHome", {
+            data: [              
+                {
+                    // Change type to "doughnut", "line", "splineArea", etc.
+                    type: "pie",
+                    dataPoints: [
+                        {% for budget in budgets %}
+                        {% if budget.allocation.category.name == "Home" %}
+                        { label: "{{budget.allocation.name}}",  y: {{budget.valueMonth}}  },
+                        {% endif %}
+                        {% endfor %}
+                    ]
+                }
+            ]
+        });
+        chart.render();
+
+        // Food Chart
+        var chart = new CanvasJS.Chart("chartFood and Groceries", {
+            data: [              
+                {
+                    // Change type to "doughnut", "line", "splineArea", etc.
+                    type: "pie",
+                    dataPoints: [
+                        {% for budget in budgets %}
+                        {% if budget.allocation.category.name == "Food and Groceries" %}
+                        { label: "{{budget.allocation.name}}",  y: {{budget.valueMonth}}  },
+                        {% endif %}
+                        {% endfor %}
+                    ]
+                }
+            ]
+        });
+        chart.render();
+
+        // Phone Chart
+        var chart = new CanvasJS.Chart("chartPhone, Internet and Media", {
+            data: [              
+                {
+                    // Change type to "doughnut", "line", "splineArea", etc.
+                    type: "pie",
+                    dataPoints: [
+                        {% for budget in budgets %}
+                        {% if budget.allocation.category.name == "Phone, Internet and Media" %}
+                        { label: "{{budget.allocation.name}}",  y: {{budget.valueMonth}}  },
+                        {% endif %}
+                        {% endfor %}
+                    ]
+                }
+            ]
+        });
+        chart.render();
+
+        // Shopping Chart
+        var chart = new CanvasJS.Chart("chartShopping and Personal Care", {
+            data: [              
+                {
+                    // Change type to "doughnut", "line", "splineArea", etc.
+                    type: "pie",
+                    dataPoints: [
+                        {% for budget in budgets %}
+                        {% if budget.allocation.category.name == "Shopping and Personal Care" %}
+                        { label: "{{budget.allocation.name}}",  y: {{budget.valueMonth}}  },
+                        {% endif %}
+                        {% endfor %}
+                    ]
+                }
+            ]
+        });
+        chart.render();
+
+        // Transport Chart
+        var chart = new CanvasJS.Chart("chartTransport", {
+            data: [              
+                {
+                    // Change type to "doughnut", "line", "splineArea", etc.
+                    type: "pie",
+                    dataPoints: [
+                        {% for budget in budgets %}
+                        {% if budget.allocation.category.name == "Transport" %}
+                        { label: "{{budget.allocation.name}}",  y: {{budget.valueMonth}}  },
+                        {% endif %}
+                        {% endfor %}
+                    ]
+                }
+            ]
+        });
+        chart.render();
+
+        // Recreation Chart
+        var chart = new CanvasJS.Chart("chartRecreation", {
+            data: [              
+                {
+                    // Change type to "doughnut", "line", "splineArea", etc.
+                    type: "pie",
+                    dataPoints: [
+                        {% for budget in budgets %}
+                        {% if budget.allocation.category.name == "Recreation" %}
+                        { label: "{{budget.allocation.name}}",  y: {{budget.valueMonth}}  },
+                        {% endif %}
+                        {% endfor %}
+                    ]
+                }
+            ]
+        });
+        chart.render();
+
+        // Medical Chart
+        var chart = new CanvasJS.Chart("chartMedical", {
+            data: [              
+                {
+                    // Change type to "doughnut", "line", "splineArea", etc.
+                    type: "pie",
+                    dataPoints: [
+                        {% for budget in budgets %}
+                        {% if budget.allocation.category.name == "Medical" %}
+                        { label: "{{budget.allocation.name}}",  y: {{budget.valueMonth}}  },
+                        {% endif %}
+                        {% endfor %}
+                    ]
+                }
+            ]
+        });
+        chart.render();
+
+        // Insurance Chart
+        var chart = new CanvasJS.Chart("chartInsurance", {
+            data: [              
+                {
+                    // Change type to "doughnut", "line", "splineArea", etc.
+                    type: "pie",
+                    dataPoints: [
+                        {% for budget in budgets %}
+                        {% if budget.allocation.category.name == "Insurance" %}
+                        { label: "{{budget.allocation.name}}",  y: {{budget.valueMonth}}  },
+                        {% endif %}
+                        {% endfor %}
+                    ]
+                }
+            ]
+        });
+        chart.render();
+    }
+</script>
+
+<script>
+    function save(){
+        transactionAllocations = [];
+        capitalAllocations = [];
+
+        $("select[class='allocationSelect']").each(function(){
+            id = $(this).attr('id'); // grab id of select object
+            value = $('#' + id + ' :selected').val(); // grab value of select object
+            if(value != "0"){
+                if(value.includes("CAPEX")){
+                    value = value.slice(5-value.length);
+                    capitalAllocation = {allocation:value, transaction:id};
+                    capitalAllocations.push(capitalAllocation);
+                } else {
+                    transactionAllocation = {allocation:value, transaction:id};
+                    transactionAllocations.push(transactionAllocation);
+                }
+            }
+        });
+
+        data = {transactionAllocations:transactionAllocations, capitalAllocations:capitalAllocations};
+
+        csrftoken = getCookie('csrftoken');
+
+        json = JSON.stringify(data);
+        console.log(data)
+
+        $.ajax({
+            type: "POST",
+            credentials: 'same-origin',
+            url: "{% url 'saveAllocations' %}",
+            data: json,
+            headers: { 'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json',
+            "X-CSRFToken": csrftoken },
+            // on success
+            success: function (response) {
+                errors = response.errors
+                for (let i = 0; i < errors.length; i++) {
+                    alert(errors[i])
+                }
+                
+                location.reload();
+            },
+            // on error
+            error: function (response) {
+                // alert the error if any error occured
+                
+            }
+        });
+
+    }
+</script>
+{% endblock %}
+

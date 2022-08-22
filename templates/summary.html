@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}
+Finance - Transactions
+{% endblock %}
+
+{% block header %}
+{% endblock %}
+
+{% block main %}
+<br>
+<br>
+<div class="container-fluid">
+    <div class="row">
+        <p>Total Outgoing: ${{netTotal}}</p>
+        <table class="table">
+        {% for allocation in allocations %}
+            {% ifchanged allocation.object.category.name %}
+            <tr>
+                <th colspan="7" style="text-align:center;">{{allocation.object.category.name}}</th>
+            </tr>
+            <tr>
+                <th>Allocation</th>
+                <th>Budget</th>                        
+                <th>Debit</th>
+                <th>Credit</th>
+                <th>Reallocated</th>
+                <th>Balance</th>
+                <th>Net Outgoing</th>
+            </tr>
+            {% endifchanged %}
+            <tr>
+                <td>{{allocation.object.name}}</td>
+                <td>${{allocation.budget}}</td>
+                <td>${{allocation.debits}}</td>
+                <td>${{allocation.credits}}</td>
+                <td>${{allocation.reallocation}}</td>
+                <td>${{allocation.balance}}</td>
+                <td>${{allocation.net}}</td>
+            </tr>
+        {% endfor %}
+        </table>
+    </div>
+</div>
+
+
+{% endblock %}
+

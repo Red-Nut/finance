@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block title %}
+Finance - Transactions
+{% endblock %}
+
+{% block header %}
+{% endblock %}
+
+{% block main %}
+<br>
+<br>
+<div class="container-fluid">
+    <div class="row">
+        <table class="table">
+            <tr>
+                <th>Date</th>
+                <th>Description</th>                        
+                <th>Type</th>
+                <th>Merchant</th>
+                <th>Value</th>
+                <th>Paid To</th>
+                <th>Paid From</th>
+                <th>Allocation</th>
+                <th>Comments</th>
+            </tr>
+        {% for transaction in transactions %}
+            <tr>
+                <td>{{transaction.date}}</td>
+                <td>{{transaction.name}}</td>
+                <td>{{transaction.get_type_display}}</td>
+                {% if transaction.merchant is None %}
+                <td>-</td>
+                {% else %}
+                <td>{{transaction.merchant}}</td>
+                {% endif %}
+                <td 
+                {% if transaction.get_type_display == "Debit" %}
+                style="color:red;"
+                {% endif %}
+                >
+                {% for a in transaction.allocations.all %}
+                    {% if a.allocation == allocation %}
+                        {{a.value}}
+                    {% endif %}
+                {% endfor %}
+                </td>
+                {% if transaction.paid_to is None %}
+                <td>-</td>
+                {% else %}
+                <td>{{transaction.paid_to}}</td>
+                {% endif %}
+                {% if transaction.paid_from is None %}
+                <td>-</td>
+                {% else %}
+                <td>{{transaction.paid_from}}</td>
+                {% endif %}
+                <td>
+                    {% for allocation in transaction.allocations.all %}
+                    {{allocation.allocation}}
+                    {% endfor %}
+                </td>
+                <td>{{transaction.comment}}</td>
+            </tr>
+        {% endfor %}
+
+        {% for transaction in transactionsCapex %}
+            <tr>
+                <td>{{transaction.date}}</td>
+                <td>{{transaction.name}}</td>
+                <td>{{transaction.get_type_display}}</td>
+                {% if transaction.merchant is None %}
+                <td>-</td>
+                {% else %}
+                <td>{{transaction.merchant}}</td>
+                {% endif %}
+                <td 
+                {% if transaction.get_type_display == "Debit" %}
+                style="color:red;"
+                {% endif %}
+                >
+                {% for a in transaction.capex_allocation.all %}
+                    {% if a.capex.paid_from == allocation %}
+                        <p>{{a.value}}</p>
+                    {% endif %}
+                {% endfor %}
+                </td>
+                {% if transaction.paid_to is None %}
+                <td>-</td>
+                {% else %}
+                <td>{{transaction.paid_to}}</td>
+                {% endif %}
+                {% if transaction.paid_from is None %}
+                <td>-</td>
+                {% else %}
+                <td>{{transaction.paid_from}}</td>
+                {% endif %}
+                <td>
+                    {% for capex in transaction.capex_allocation.all %}
+                    <p>{{capex.capex}}</p>
+                    {% endfor %}
+                </td>
+                <td>{{transaction.comment}}</td>
+            </tr>
+        {% endfor %}
+        </table>
+    </div>
+</div>
+
+
+{% endblock %}
+
