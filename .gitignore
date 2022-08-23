@@ -4,3 +4,5 @@ soup.txt
 finance/.env
 venv/
 database_export/
+datadump.json
+__pycache__/
