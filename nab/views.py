@@ -38,7 +38,7 @@ def NABTransactions(request):
     options = webdriver.ChromeOptions()
     options.add_argument('--disable-site-isolation-trials')
     #options.headless = True 
-    driver = uc.Chrome(options=options)
+    driver = uc.Chrome(options=options, version_main=104)
 
     #Set full screen
     driver.set_window_position(0, 0)
@@ -50,9 +50,10 @@ def NABTransactions(request):
     driver.get(url)
 
     # Login
-    driver.find_element_by_id("userid").send_keys(settings.NAB_USERNAME)
-    driver.find_element_by_id("password").send_keys(settings.NAB_PASSWORD)
-    driver.find_element_by_id("loginBtn").click()
+    time.sleep(20)
+    #driver.find_element_by_id("username").send_keys(settings.NAB_USERNAME)
+    #driver.find_element_by_id("password").send_keys(settings.NAB_PASSWORD)
+    #driver.find_element_by_id("loginBtn").click()
 
     # Go to Transactions Page
     time.sleep(2)
@@ -100,10 +101,10 @@ def processTransactions(driver, id, account):
     driver.execute_script('''return document.querySelector('miniapp-transactions').shadowRoot.querySelector('#dropdown-listbox-accountsListDropdown-''' + str(id) + '''').click()''')
     
     # Select Last 7 days
-    time.sleep(0.5)
-    driver.execute_script('''return document.querySelector('miniapp-transactions').shadowRoot.querySelector('#dropdown-toggle-button-DateDropdown').click()''')
-    time.sleep(0.5)
-    driver.execute_script('''return document.querySelector('miniapp-transactions').shadowRoot.querySelector('#dropdown-listbox-DateDropdown-0').click()''')
+    #time.sleep(0.5)
+    #driver.execute_script('''return document.querySelector('miniapp-transactions').shadowRoot.querySelector('#dropdown-toggle-button-DateDropdown').click()''')
+    #time.sleep(0.5)
+    #driver.execute_script('''return document.querySelector('miniapp-transactions').shadowRoot.querySelector('#dropdown-listbox-DateDropdown-0').click()''')
 
     # Select Custom Date Range
     #driver.execute_script('''return document.querySelector('miniapp-transactions').shadowRoot.querySelector('#dropdown-toggle-button-DateDropdown').click()''')

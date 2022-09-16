@@ -766,355 +766,6 @@ Finance - Home
         
     </div>
 
-    <!--- ************* WEEKLY SUMMARY ************* --->
-    {% for week in weeks %}
-    {% if week.weekNo <= currentWeekNo %}
-    <div class="row">
-        <div class="card" style="width: 100%;">
-            <div class="card-body">
-                <h1 class="card-title" style="text-align:center;">Week {{week.weekNoDisplay}}{% if week.weekNo == currentWeekNo %} (Current Week){% endif %}{% if week.weekNoDisplay == currentWeekNo %} (Previous Week){% endif %}</h1>
-                <div class="row">
-                    <!--- ************* Expenditure ************* --->
-                    <div class="col-lg">
-                        <div class="card" style="width: 100%;">
-                            <div class="card-body">
-                                <div id="chartWeekCategories{{week.weekNo}}" style="height: 500px; width: 100%;"></div>
-                            </div>
-                        </div>
-                        {% for week in weeks %}
-                        {% if week.weekNo <= currentWeekNo %}
-                        <script type="text/javascript">
-                            function chartWeekCategories{{week.weekNo}}(){
-                                var chart = new CanvasJS.Chart("chartWeekCategories{{week.weekNo}}", {
-                                    title:{
-                                        text: "Expenditure (by Category)",
-                                        fontSize: 24, 
-                                        fontFamily: "tahoma",  
-                                    },
-                                    toolTip:{
-                                        contentFormatter: function ( e ) {
-                                            return e.entries[0].dataPoint.label;  
-                                        }  
-                                    },
-                                    data: [              
-                                        {
-                                            // Change type to "doughnut", "line", "splineArea", etc.
-                                            type: "pie",
-                                            click: function(e){
-                                                document.getElementById(e.dataPoint.buttonID).click();
-                                            },
-                                            dataPoints: [
-                                                {% for category in week.categoriesGraph %}
-                                                { 
-                                                    label: "{{category.object.name}}: ${{category.spend}}",  
-                                                    y: {{category.spend}}, 
-                                                    exploded: true ,
-                                                    buttonID: "chartWeekCategories{{week.weekNo}}-{{category.object.id}}"
-                                                },
-                                                {% endfor %}
-                                            ]
-                                        }
-                                    ]
-                                });
-                                chart.render();
-                            }
-                        </script>
-                        {% for category in week.categoriesGraph %}
-                        <form action="/transactions" method="POST" style="display:none">
-                            {% csrf_token %}
-                            <input type="text" name="start_date" value="{{week.weekStart}}" />
-                            <input type="text" name="end_date" value="{{week.weekEnd}}" />
-                            <input type="text" name="category_ids" value="{{category.object.id}}" />
-                            <input type="submit" value="Submit" id="chartWeekCategories{{week.weekNo}}-{{category.object.id}}" />
-                        </form>
-                        {% endfor %}
-                        {% endif %}
-                        {% endfor %}
-
-                    </div>
-                    
-                    <div class="col-lg">
-                    <div class="card" style="width: 100%;">
-                        <div class="card-body">
-                            <!--- ************* Budget (Percentage) ************* --->
-                            <div>
-                                <div id="chartWeekBudgetAllocationPercent{{week.weekNo}}" style="height: 300px; width: 100%;"></div>
-                                {% for week in weeks %}
-                                {% if week.weekNo <= currentWeekNo %}
-                                <script type="text/javascript">
-                                    function chartWeekBudgetAllocationPercent{{week.weekNo}}(){
-                                        var chart = new CanvasJS.Chart("chartWeekBudgetAllocationPercent{{week.weekNo}}", {
-                                            title:{
-                                                text: "Budget Spend (Percentage)",
-                                                fontSize: 24, 
-                                                fontFamily: "tahoma",  
-                                            },
-                                            axisY:{    
-                                                valueFormatString:  "#,##0.##", // move comma to change formatting
-                                                prefix: "%",
-                                                maximum: 300,
-                                                minimum: 0,
-                                            },
-                                            toolTip: {
-                                                shared: true,
-                                                contentFormatter: function (e) {
-                                                    return e.entries[0].dataPoint.tool;
-                                                }
-                                            },
-                                            legend:{
-                                                fontSize: 14,
-                                                //dockInsidePlotArea: true,
-                                                verticalAlign: "top",
-                                                horizontalAlign: "center"  
-                                            },
-                                            data: [              
-                                                {
-                                                    type: "stackedColumn",
-                                                    showInLegend: true,
-                                                    name: "Spent",
-                                                    color: "#7FB285",
-                                                    click: function(e){
-                                                        document.getElementById(e.dataPoint.buttonID).click();
-                                                    },
-                                                    dataPoints: [
-                                                        {% for allocation in week.allocationsGraph %}
-                                                            {% if allocation.budget is None %}
-                                                            { 
-                                                                label: "{{allocation.object.name}}",  
-                                                                y: 0,
-                                                                x: {{allocation.x}},  
-                                                                tool: "{{allocation.object.name}}: No Budget",
-                                                                buttonID: "chartBudgetAllocation-week{{week.weekNo}}-{{allocation.object.id}}"
-                                                            },
-                                                            {% else %}
-                                                            { 
-                                                                label: "{{allocation.object.name}}",  
-                                                                y: ({{allocation.budget}}-{{allocation.under}})/{{allocation.budget}}*100, 
-                                                                x: {{allocation.x}},  
-                                                                tool: "{{allocation.object.name}}: %" + Math.round({{allocation.spend}}*100*100/{{allocation.budget}},2)/100,
-                                                                buttonID: "chartBudgetAllocation-week{{week.weekNo}}-{{allocation.object.id}}"
-                                                            },
-                                                            {% endif %}
-                                                        {% endfor %}
-                                                    ]
-                                                },
-                                                {        
-                                                    type: "stackedColumn",
-                                                    showInLegend: true,
-                                                    name: "Remaining Budget",
-                                                    color: "#008DD5",
-                                                    click: function(e){
-                                                        document.getElementById(e.dataPoint.buttonID).click();
-                                                    },
-                                                    dataPoints: [
-                                                        {% for allocation in week.allocationsGraph %}
-                                                            {% if allocation.budget is None %}
-                                                            { 
-                                                                label: "{{allocation.object.name}}",  
-                                                                y: 0,
-                                                                x: {{allocation.x}}, 
-                                                                buttonID: "chartBudgetAllocation-week{{week.weekNo}}-{{allocation.object.id}}"
-                                                            },
-                                                            {% else %}
-                                                            { 
-                                                                label: "{{allocation.object.name}}",  
-                                                                y: {{allocation.under}}/{{allocation.budget}}*100, 
-                                                                x: {{allocation.x}} ,  
-                                                                buttonID: "chartBudgetAllocation-week{{week.weekNo}}-{{allocation.object.id}}"
-                                                            },
-                                                            {% endif %}
-                                                        {% endfor %}
-                                                    ]
-                                                },
-                                                {        
-                                                    type: "stackedColumn",
-                                                    showInLegend: true,
-                                                    name: "Overspend",
-                                                    color: "#EF233C",
-                                                    click: function(e){
-                                                        document.getElementById(e.dataPoint.buttonID).click();
-                                                    },
-                                                    dataPoints: [
-                                                        {% for allocation in week.allocationsGraph %}
-                                                            {% if allocation.budget is None %}
-                                                            { 
-                                                                label: "{{allocation.object.name}}",  
-                                                                y: 0,
-                                                                x: {{allocation.x}},  
-                                                                buttonID: "chartBudgetAllocation-week{{week.weekNo}}-{{allocation.object.id}}"
-                                                            },
-                                                            {% else %}
-                                                            { 
-                                                                label: "{{allocation.object.name}}",  
-                                                                y: {{allocation.excess}}/{{allocation.budget}}*100, 
-                                                                x: {{allocation.x}},  
-                                                                buttonID: "chartBudgetAllocation-week{{week.weekNo}}-{{allocation.object.id}}"
-                                                            },
-                                                            {% endif %}
-                                                        {% endfor %}
-                                                    ]
-                                                }
-                                            ]
-                                        });
-                                        chart.render();
-                                    }
-                                </script>
-                                {% endif %}
-                                {% endfor %}
-                            </div>
-                            <br><hr><br>
-
-                            <!--- ************* Budget ************* --->
-                            <div>
-                                <div id="chartWeekBudgetAllocationAbsolute{{week.weekNo}}" style="height: 300px; width: 100%;"></div>
-                                {% for week in weeks %}
-                                {% if week.weekNo <= currentWeekNo %}
-                                <script type="text/javascript">
-                                    function chartWeekBudgetAllocationAbsolute{{week.weekNo}}(){
-                                        var chart = new CanvasJS.Chart("chartWeekBudgetAllocationAbsolute{{week.weekNo}}", {
-                                            title:{
-                                                text: "Budget Spend",
-                                                fontSize: 24, 
-                                                fontFamily: "tahoma",  
-                                            },
-                                            axisY:{    
-                                                valueFormatString:  "#,##0.##", // move comma to change formatting
-                                                prefix: "$"
-                                            },
-                                            toolTip: {
-                                                shared: true,
-                                                contentFormatter: function (e) {
-                                                    return e.entries[0].dataPoint.tool;
-                                                }
-                                            },
-                                            legend:{
-                                                fontSize: 14,
-                                                //dockInsidePlotArea: true,
-                                                verticalAlign: "top",
-                                                horizontalAlign: "center"  
-                                            },
-                                            data: [              
-                                                {
-                                                    type: "stackedColumn",
-                                                    showInLegend: true,
-                                                    name: "Spent",
-                                                    color: "#7FB285",
-                                                    click: function(e){
-                                                        document.getElementById(e.dataPoint.buttonID).click();
-                                                    },
-                                                    dataPoints: [
-                                                        {% for allocation in week.allocationsGraph %}
-                                                            {% if allocation.budget is None %}
-                                                            { 
-                                                                label: "{{allocation.object.name}}",  
-                                                                y: allocation.spend,
-                                                                x: {{allocation.x}} ,
-                                                                {% if allocation.excess > 0 %}
-                                                                tool: "<span><b>{{allocation.object.name}}</b></span><br><span>Budget: $0.00" + "</span><br><span>Spend:</span><span style='color:red'> $" + Math.round({{allocation.spend}}*100,2)/100 + "</span>" ,
-                                                                {% else %}
-                                                                tool: "<span><b>{{allocation.object.name}}</b></span><br><span>Budget: $0.00" + "</span><br><span>Spend: $" + Math.round({{allocation.spend}}*100,2)/100 + "</span>" ,
-                                                                {% endif %}
-                                                                buttonID: "chartBudgetAllocation-week{{week.weekNo}}-{{allocation.object.id}}"
-                                                            },
-                                                            {% else %}
-                                                            { 
-                                                                label: "{{allocation.object.name}}",  
-                                                                y: ({{allocation.budget}}-{{allocation.under}}), 
-                                                                x: {{allocation.x}},
-                                                                {% if allocation.excess > 0 %}
-                                                                tool: "<span><b>{{allocation.object.name}}</b></span><br><span>Budget: $" + Math.round({{allocation.budget}}*100,2)/100 + "</span><br><span>Spend:</span><span style='color:red'> $" + Math.round({{allocation.spend}}*100,2)/100 + "</span>", 
-                                                                {% else %}
-                                                                tool: "<span><b>{{allocation.object.name}}</b></span><br><span>Budget: $" + Math.round({{allocation.budget}}*100,2)/100 + "</span><br><span>Spend: $" + Math.round({{allocation.spend}}*100,2)/100 + "</span>" ,
-                                                                {% endif %}
-                                                                buttonID: "chartBudgetAllocation-week{{week.weekNo}}-{{allocation.object.id}}"
-                                                            },
-                                                            {% endif %}
-                                                        {% endfor %}
-                                                    ]
-                                                },
-                                                {        
-                                                    type: "stackedColumn",
-                                                    showInLegend: true,
-                                                    name: "Remaining Budget",
-                                                    color: "#008DD5",
-                                                    click: function(e){
-                                                        document.getElementById(e.dataPoint.buttonID).click();
-                                                    },
-                                                    dataPoints: [
-                                                        {% for allocation in week.allocationsGraph %}
-                                                            {% if allocation.budget is None %}
-                                                            { 
-                                                                label: "{{allocation.object.name}}",  
-                                                                y: 0,
-                                                                x: {{allocation.x}},
-                                                                buttonID: "chartBudgetAllocation-week{{week.weekNo}}-{{allocation.object.id}}"
-                                                            },
-                                                            {% else %}
-                                                            { 
-                                                                label: "{{allocation.object.name}}",  
-                                                                y: {{allocation.under}}, 
-                                                                x: {{allocation.x}},
-                                                                buttonID: "chartBudgetAllocation-week{{week.weekNo}}-{{allocation.object.id}}"
-                                                            },
-                                                            {% endif %}
-                                                        {% endfor %}
-                                                    ]
-                                                },
-                                                {        
-                                                    type: "stackedColumn",
-                                                    showInLegend: true,
-                                                    name: "Overspend",
-                                                    color: "#EF233C",
-                                                    click: function(e){
-                                                        document.getElementById(e.dataPoint.buttonID).click();
-                                                    },
-                                                    dataPoints: [
-                                                        {% for allocation in week.allocationsGraph %}
-                                                            {% if allocation.budget is None %}
-                                                            { 
-                                                                label: "{{allocation.object.name}}",  
-                                                                y: {{allocation.excess}},
-                                                                x: {{allocation.x}},
-                                                                buttonID: "chartBudgetAllocation-week{{week.weekNo}}-{{allocation.object.id}}"
-                                                            },
-                                                            {% else %}
-                                                            { 
-                                                                label: "{{allocation.object.name}}",  
-                                                                y: {{allocation.excess}}, 
-                                                                x: {{allocation.x}},
-                                                                buttonID: "chartBudgetAllocation-week{{week.weekNo}}-{{allocation.object.id}}"
-                                                            },
-                                                            {% endif %}
-                                                        {% endfor %}
-                                                    ]
-                                                }
-                                            ]
-                                        });
-                                        chart.render();
-                                    }
-                                </script>
-                                {% for allocation in week.allocationsGraph %}
-                                <form action="/transactions" method="POST" style="display:none">
-                                    {% csrf_token %}
-                                    <input type="text" name="start_date" value="{{week.weekStart}}" />
-                                    <input type="text" name="end_date" value="{{week.weekEnd}}" />
-                                    <input type="text" name="allocation_ids" value="{{allocation.object.id}}" />
-                                    <input type="submit" value="Submit" id="chartBudgetAllocation-week{{week.weekNo}}-{{allocation.object.id}}" />
-                                </form>
-                                {% endfor %}
-                                {% endif %}
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    {% endif %}
-    {% endfor %}
-
     <!--- ************* MONTH SUMMARY ************* --->
     <div class="row">
         <div class="card" style="width: 100%;">
@@ -1510,6 +1161,357 @@ Finance - Home
             </div>
         </div>
     </div>
+
+    <!--- ************* WEEKLY SUMMARY ************* --->
+    {% for week in weeks %}
+    {% if week.weekNo <= currentWeekNo %}
+    <div class="row">
+        <div class="card" style="width: 100%;">
+            <div class="card-body">
+                <h1 class="card-title" style="text-align:center;">Week {{week.weekNoDisplay}}{% if week.weekNo == currentWeekNo %} (Current Week){% endif %}{% if week.weekNoDisplay == currentWeekNo %} (Previous Week){% endif %}</h1>
+                <div class="row">
+                    <!--- ************* Expenditure ************* --->
+                    <div class="col-lg">
+                        <div class="card" style="width: 100%;">
+                            <div class="card-body">
+                                <div id="chartWeekCategories{{week.weekNo}}" style="height: 500px; width: 100%;"></div>
+                            </div>
+                        </div>
+                        {% for week in weeks %}
+                        {% if week.weekNo <= currentWeekNo %}
+                        <script type="text/javascript">
+                            function chartWeekCategories{{week.weekNo}}(){
+                                var chart = new CanvasJS.Chart("chartWeekCategories{{week.weekNo}}", {
+                                    title:{
+                                        text: "Expenditure (by Category)",
+                                        fontSize: 24, 
+                                        fontFamily: "tahoma",  
+                                    },
+                                    toolTip:{
+                                        contentFormatter: function ( e ) {
+                                            return e.entries[0].dataPoint.label;  
+                                        }  
+                                    },
+                                    data: [              
+                                        {
+                                            // Change type to "doughnut", "line", "splineArea", etc.
+                                            type: "pie",
+                                            click: function(e){
+                                                document.getElementById(e.dataPoint.buttonID).click();
+                                            },
+                                            dataPoints: [
+                                                {% for category in week.categoriesGraph %}
+                                                { 
+                                                    label: "{{category.object.name}}: ${{category.spend}}",  
+                                                    y: {{category.spend}}, 
+                                                    exploded: true ,
+                                                    buttonID: "chartWeekCategories{{week.weekNo}}-{{category.object.id}}"
+                                                },
+                                                {% endfor %}
+                                            ]
+                                        }
+                                    ]
+                                });
+                                chart.render();
+                            }
+                        </script>
+                        {% for category in week.categoriesGraph %}
+                        <form action="/transactions" method="POST" style="display:none">
+                            {% csrf_token %}
+                            <input type="text" name="start_date" value="{{week.weekStart}}" />
+                            <input type="text" name="end_date" value="{{week.weekEnd}}" />
+                            <input type="text" name="category_ids" value="{{category.object.id}}" />
+                            <input type="submit" value="Submit" id="chartWeekCategories{{week.weekNo}}-{{category.object.id}}" />
+                        </form>
+                        {% endfor %}
+                        {% endif %}
+                        {% endfor %}
+
+                    </div>
+                    
+                    <div class="col-lg">
+                    <div class="card" style="width: 100%;">
+                        <div class="card-body">
+                            <!--- ************* Budget (Percentage) ************* --->
+                            <div>
+                                <div id="chartWeekBudgetAllocationPercent{{week.weekNo}}" style="height: 300px; width: 100%;"></div>
+                                {% for week in weeks %}
+                                {% if week.weekNo <= currentWeekNo %}
+                                <script type="text/javascript">
+                                    function chartWeekBudgetAllocationPercent{{week.weekNo}}(){
+                                        var chart = new CanvasJS.Chart("chartWeekBudgetAllocationPercent{{week.weekNo}}", {
+                                            title:{
+                                                text: "Budget Spend (Percentage)",
+                                                fontSize: 24, 
+                                                fontFamily: "tahoma",  
+                                            },
+                                            axisY:{    
+                                                valueFormatString:  "#,##0.##", // move comma to change formatting
+                                                prefix: "%",
+                                                maximum: 300,
+                                                minimum: 0,
+                                            },
+                                            toolTip: {
+                                                shared: true,
+                                                contentFormatter: function (e) {
+                                                    return e.entries[0].dataPoint.tool;
+                                                }
+                                            },
+                                            legend:{
+                                                fontSize: 14,
+                                                //dockInsidePlotArea: true,
+                                                verticalAlign: "top",
+                                                horizontalAlign: "center"  
+                                            },
+                                            data: [              
+                                                {
+                                                    type: "stackedColumn",
+                                                    showInLegend: true,
+                                                    name: "Spent",
+                                                    color: "#7FB285",
+                                                    click: function(e){
+                                                        document.getElementById(e.dataPoint.buttonID).click();
+                                                    },
+                                                    dataPoints: [
+                                                        {% for allocation in week.allocationsGraph %}
+                                                            {% if allocation.budget is None %}
+                                                            { 
+                                                                label: "{{allocation.object.name}}",  
+                                                                y: 0,
+                                                                x: {{allocation.x}},  
+                                                                tool: "{{allocation.object.name}}: No Budget",
+                                                                buttonID: "chartBudgetAllocation-week{{week.weekNo}}-{{allocation.object.id}}"
+                                                            },
+                                                            {% else %}
+                                                            { 
+                                                                label: "{{allocation.object.name}}",  
+                                                                y: ({{allocation.budget}}-{{allocation.under}})/{{allocation.budget}}*100, 
+                                                                x: {{allocation.x}},  
+                                                                tool: "{{allocation.object.name}}: %" + Math.round({{allocation.spend}}*100*100/{{allocation.budget}},2)/100,
+                                                                buttonID: "chartBudgetAllocation-week{{week.weekNo}}-{{allocation.object.id}}"
+                                                            },
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    ]
+                                                },
+                                                {        
+                                                    type: "stackedColumn",
+                                                    showInLegend: true,
+                                                    name: "Remaining Budget",
+                                                    color: "#008DD5",
+                                                    click: function(e){
+                                                        document.getElementById(e.dataPoint.buttonID).click();
+                                                    },
+                                                    dataPoints: [
+                                                        {% for allocation in week.allocationsGraph %}
+                                                            {% if allocation.budget is None %}
+                                                            { 
+                                                                label: "{{allocation.object.name}}",  
+                                                                y: 0,
+                                                                x: {{allocation.x}}, 
+                                                                buttonID: "chartBudgetAllocation-week{{week.weekNo}}-{{allocation.object.id}}"
+                                                            },
+                                                            {% else %}
+                                                            { 
+                                                                label: "{{allocation.object.name}}",  
+                                                                y: {{allocation.under}}/{{allocation.budget}}*100, 
+                                                                x: {{allocation.x}} ,  
+                                                                buttonID: "chartBudgetAllocation-week{{week.weekNo}}-{{allocation.object.id}}"
+                                                            },
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    ]
+                                                },
+                                                {        
+                                                    type: "stackedColumn",
+                                                    showInLegend: true,
+                                                    name: "Overspend",
+                                                    color: "#EF233C",
+                                                    click: function(e){
+                                                        document.getElementById(e.dataPoint.buttonID).click();
+                                                    },
+                                                    dataPoints: [
+                                                        {% for allocation in week.allocationsGraph %}
+                                                            {% if allocation.budget is None %}
+                                                            { 
+                                                                label: "{{allocation.object.name}}",  
+                                                                y: 0,
+                                                                x: {{allocation.x}},  
+                                                                buttonID: "chartBudgetAllocation-week{{week.weekNo}}-{{allocation.object.id}}"
+                                                            },
+                                                            {% else %}
+                                                            { 
+                                                                label: "{{allocation.object.name}}",  
+                                                                y: {{allocation.excess}}/{{allocation.budget}}*100, 
+                                                                x: {{allocation.x}},  
+                                                                buttonID: "chartBudgetAllocation-week{{week.weekNo}}-{{allocation.object.id}}"
+                                                            },
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    ]
+                                                }
+                                            ]
+                                        });
+                                        chart.render();
+                                    }
+                                </script>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                            <br><hr><br>
+
+                            <!--- ************* Budget ************* --->
+                            <div>
+                                <div id="chartWeekBudgetAllocationAbsolute{{week.weekNo}}" style="height: 300px; width: 100%;"></div>
+                                {% for week in weeks %}
+                                {% if week.weekNo <= currentWeekNo %}
+                                <script type="text/javascript">
+                                    function chartWeekBudgetAllocationAbsolute{{week.weekNo}}(){
+                                        var chart = new CanvasJS.Chart("chartWeekBudgetAllocationAbsolute{{week.weekNo}}", {
+                                            title:{
+                                                text: "Budget Spend",
+                                                fontSize: 24, 
+                                                fontFamily: "tahoma",  
+                                            },
+                                            axisY:{    
+                                                valueFormatString:  "#,##0.##", // move comma to change formatting
+                                                prefix: "$"
+                                            },
+                                            toolTip: {
+                                                shared: true,
+                                                contentFormatter: function (e) {
+                                                    return e.entries[0].dataPoint.tool;
+                                                }
+                                            },
+                                            legend:{
+                                                fontSize: 14,
+                                                //dockInsidePlotArea: true,
+                                                verticalAlign: "top",
+                                                horizontalAlign: "center"  
+                                            },
+                                            data: [              
+                                                {
+                                                    type: "stackedColumn",
+                                                    showInLegend: true,
+                                                    name: "Spent",
+                                                    color: "#7FB285",
+                                                    click: function(e){
+                                                        document.getElementById(e.dataPoint.buttonID).click();
+                                                    },
+                                                    dataPoints: [
+                                                        {% for allocation in week.allocationsGraph %}
+                                                            {% if allocation.budget is None %}
+                                                            { 
+                                                                label: "{{allocation.object.name}}",  
+                                                                y: allocation.spend,
+                                                                x: {{allocation.x}} ,
+                                                                {% if allocation.excess > 0 %}
+                                                                tool: "<span><b>{{allocation.object.name}}</b></span><br><span>Budget: $0.00" + "</span><br><span>Spend:</span><span style='color:red'> $" + Math.round({{allocation.spend}}*100,2)/100 + "</span>" ,
+                                                                {% else %}
+                                                                tool: "<span><b>{{allocation.object.name}}</b></span><br><span>Budget: $0.00" + "</span><br><span>Spend: $" + Math.round({{allocation.spend}}*100,2)/100 + "</span>" ,
+                                                                {% endif %}
+                                                                buttonID: "chartBudgetAllocation-week{{week.weekNo}}-{{allocation.object.id}}"
+                                                            },
+                                                            {% else %}
+                                                            { 
+                                                                label: "{{allocation.object.name}}",  
+                                                                y: ({{allocation.budget}}-{{allocation.under}}), 
+                                                                x: {{allocation.x}},
+                                                                {% if allocation.excess > 0 %}
+                                                                tool: "<span><b>{{allocation.object.name}}</b></span><br><span>Budget: $" + Math.round({{allocation.budget}}*100,2)/100 + "</span><br><span>Spend:</span><span style='color:red'> $" + Math.round({{allocation.spend}}*100,2)/100 + "</span>", 
+                                                                {% else %}
+                                                                tool: "<span><b>{{allocation.object.name}}</b></span><br><span>Budget: $" + Math.round({{allocation.budget}}*100,2)/100 + "</span><br><span>Spend: $" + Math.round({{allocation.spend}}*100,2)/100 + "</span>" ,
+                                                                {% endif %}
+                                                                buttonID: "chartBudgetAllocation-week{{week.weekNo}}-{{allocation.object.id}}"
+                                                            },
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    ]
+                                                },
+                                                {        
+                                                    type: "stackedColumn",
+                                                    showInLegend: true,
+                                                    name: "Remaining Budget",
+                                                    color: "#008DD5",
+                                                    click: function(e){
+                                                        document.getElementById(e.dataPoint.buttonID).click();
+                                                    },
+                                                    dataPoints: [
+                                                        {% for allocation in week.allocationsGraph %}
+                                                            {% if allocation.budget is None %}
+                                                            { 
+                                                                label: "{{allocation.object.name}}",  
+                                                                y: 0,
+                                                                x: {{allocation.x}},
+                                                                buttonID: "chartBudgetAllocation-week{{week.weekNo}}-{{allocation.object.id}}"
+                                                            },
+                                                            {% else %}
+                                                            { 
+                                                                label: "{{allocation.object.name}}",  
+                                                                y: {{allocation.under}}, 
+                                                                x: {{allocation.x}},
+                                                                buttonID: "chartBudgetAllocation-week{{week.weekNo}}-{{allocation.object.id}}"
+                                                            },
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    ]
+                                                },
+                                                {        
+                                                    type: "stackedColumn",
+                                                    showInLegend: true,
+                                                    name: "Overspend",
+                                                    color: "#EF233C",
+                                                    click: function(e){
+                                                        document.getElementById(e.dataPoint.buttonID).click();
+                                                    },
+                                                    dataPoints: [
+                                                        {% for allocation in week.allocationsGraph %}
+                                                            {% if allocation.budget is None %}
+                                                            { 
+                                                                label: "{{allocation.object.name}}",  
+                                                                y: {{allocation.excess}},
+                                                                x: {{allocation.x}},
+                                                                buttonID: "chartBudgetAllocation-week{{week.weekNo}}-{{allocation.object.id}}"
+                                                            },
+                                                            {% else %}
+                                                            { 
+                                                                label: "{{allocation.object.name}}",  
+                                                                y: {{allocation.excess}}, 
+                                                                x: {{allocation.x}},
+                                                                buttonID: "chartBudgetAllocation-week{{week.weekNo}}-{{allocation.object.id}}"
+                                                            },
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    ]
+                                                }
+                                            ]
+                                        });
+                                        chart.render();
+                                    }
+                                </script>
+                                {% for allocation in week.allocationsGraph %}
+                                <form action="/transactions" method="POST" style="display:none">
+                                    {% csrf_token %}
+                                    <input type="text" name="start_date" value="{{week.weekStart}}" />
+                                    <input type="text" name="end_date" value="{{week.weekEnd}}" />
+                                    <input type="text" name="allocation_ids" value="{{allocation.object.id}}" />
+                                    <input type="submit" value="Submit" id="chartBudgetAllocation-week{{week.weekNo}}-{{allocation.object.id}}" />
+                                </form>
+                                {% endfor %}
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% endif %}
+    {% endfor %}
+
+    
 </div>
 
 <!--- ************* ON LOAD SCRIPT ************* --->

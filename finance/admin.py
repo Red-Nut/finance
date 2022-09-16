@@ -39,6 +39,7 @@ class CapexAllocationsInlineAdmin(admin.TabularInline):
 
 class TransactionAdmin(admin.ModelAdmin):
     list_display = ("id", "date", "name", "type", "value", "merchant", "paid_from", "paid_to", "comment")
+    search_fields = ['name', 'comment']
     inlines = [AllocationsInlineAdmin, CapexAllocationsInlineAdmin]
 admin.site.register(Transaction, TransactionAdmin)
 
