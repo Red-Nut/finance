@@ -34,7 +34,7 @@ urlpatterns = [
 
     # Budget
     path('budget', views.BudgetView, name='budget'),
-    #path('budgetLock', views.LockBudget),
+    path('budgetLock', views.LockBudget),
 
     # Unallocated
     path('unallocated', views.Unallocated, name='unallocated'),

@@ -22,19 +22,19 @@ def Update(request):
 
     return redirect('index')
 
-#def LockBudget(request):
-#    budgets = Budget.objects.all()
-#    for budget in budgets:
-#        budgetLock = BudgetLock.objects.create(
-#            year = 2022,
-#            month = BudgetLock.JUL,
-#            allocation = budget.allocation,
-#            basis = budget.basis,
-#            value = budget.value,
-#            account = budget.account,
-#            rollover = budget.rollover,
-#            excess_to_allocation = budget.excess_to_allocation
-#        )
+def LockBudget(request):
+    budgets = Budget.objects.all()
+    for budget in budgets:
+        budgetLock = BudgetLock.objects.create(
+            year = 2022,
+            month = BudgetLock.SEP,
+            allocation = budget.allocation,
+            basis = budget.basis,
+            value = budget.value,
+            account = budget.account,
+            rollover = budget.rollover,
+            excess_to_allocation = budget.excess_to_allocation
+        )
 
 # Index.
 def Index(request):
@@ -172,7 +172,7 @@ def Dashboard(request, year, month, day):
         allocationsGraph = []
         for a in allocationsQuery:
             allocation = AllocationCreation(a, weekStart, weekEnd, year, month)
-            
+
             # Excess Percentage Cap
             if (allocation["excess"] + allocation["budget"]) > allocation["budget"]*3:
                 excessPercentCapped = 300

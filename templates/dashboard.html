@@ -320,7 +320,7 @@ Finance - Home
                                                         + "</span><br>"
                                                         // Remaining
                                                         + "<span>Remaining:</span>"
-                                                        + "<span'> $" + Math.round(({{allocation.budget}}-{{allocation.spend}})*100,2)/100
+                                                        + "<span'> $" + Math.round(({{allocation.budget}}-({{allocation.spend}}))*100,2)/100
                                                         + "</span>" ,
                                                     {% endif %}
                                                     buttonID: "chartBudgetAllocation-{{allocation.object.id}}"
