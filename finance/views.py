@@ -88,7 +88,7 @@ def LockBudget(request, year, month):
             transactionAllocation = TransactionAllocation.objects.create(
                 transaction=transaction,
                 allocation=budget.allocation,
-                value=budget.value
+                value=value
             )
 
 
