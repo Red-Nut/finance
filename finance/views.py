@@ -22,12 +22,12 @@ def Update(request):
 
     return redirect('index')
 
-def LockBudget(request):
+def LockBudget(request, year, month):
     budgets = Budget.objects.all()
     for budget in budgets:
         budgetLock = BudgetLock.objects.create(
-            year = 2022,
-            month = BudgetLock.SEP,
+            year = year,
+            month = month,
             allocation = budget.allocation,
             basis = budget.basis,
             value = budget.value,
@@ -35,6 +35,64 @@ def LockBudget(request):
             rollover = budget.rollover,
             excess_to_allocation = budget.excess_to_allocation
         )
+
+    budgetLocks = BudgetLock.objects.filter(year=year,month=month).all()
+
+    firstDayOfMonth = datetime.date(year,month,1)
+
+    for budget in budgetLocks:
+        if budget.basis == budget.WEEK:
+            for w in range(5):
+                # Week Start Date
+                if w == 0:
+                    weekStart = FirstMonday(firstDayOfMonth)
+                else: 
+                    weekStart = FirstMonday(firstDayOfMonth) + datetime.timedelta(days=(7*w))
+
+                # exit if week is outside of the month (i.e week 5)
+                if w != 0:
+                    if weekStart.month != firstDayOfMonth.month:
+                        break
+
+                # Add transaction
+                transaction = Transaction.objects.create(
+                    date=weekStart,
+                    name=f"Budget Allocation: {budget.allocation.code} ({budget.allocation.name})",
+                    type=Transaction.BUDGET,
+                    value=budget.value
+                )
+
+                transactionAllocation = TransactionAllocation.objects.create(
+                    transaction=transaction,
+                    allocation=budget.allocation,
+                    value=budget.value
+                )
+
+        else:
+            if budget.basis == budget.FORTNIGHT:
+                value=budget.value*4.3/2
+            if budget.basis == budget.MONTH:
+                value=budget.value
+            if budget.basis == budget.QUARTER:
+                value=budget.value/3
+            if budget.basis == budget.ANNUAL:
+                value=budget.value/12
+            # Add transaction
+            transaction = Transaction.objects.create(
+                date=firstDayOfMonth,
+                name=f"Budget Allocation: {budget.allocation.code} ({budget.allocation.name})",
+                type=Transaction.BUDGET,
+                value=budget.value
+            )
+            
+            transactionAllocation = TransactionAllocation.objects.create(
+                transaction=transaction,
+                allocation=budget.allocation,
+                value=budget.value
+            )
+
+
+    return redirect('index')
 
 # Index.
 def Index(request):
