@@ -38,7 +38,7 @@ def NABTransactions(request):
     options = webdriver.ChromeOptions()
     options.add_argument('--disable-site-isolation-trials')
     #options.headless = True 
-    driver = uc.Chrome(options=options, version_main=104)
+    driver = uc.Chrome(options=options, version_main=106)
 
     #Set full screen
     driver.set_window_position(0, 0)
@@ -50,10 +50,11 @@ def NABTransactions(request):
     driver.get(url)
 
     # Login
-    time.sleep(20)
-    #driver.find_element_by_id("username").send_keys(settings.NAB_USERNAME)
-    #driver.find_element_by_id("password").send_keys(settings.NAB_PASSWORD)
+    time.sleep(5)
+    driver.find_element_by_id("username").send_keys(settings.NAB_USERNAME)
+    driver.find_element_by_id("password").send_keys(settings.NAB_PASSWORD)
     #driver.find_element_by_id("loginBtn").click()
+    driver.find_element(By.XPATH, '//button[text()="Login"]').click()
 
     # Go to Transactions Page
     time.sleep(2)
